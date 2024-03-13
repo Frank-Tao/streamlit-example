@@ -1,23 +1,39 @@
-from huggingface_hub import InferenceClient
+import openai
+import os 
 from streamlit_chat import message
 import streamlit as st
 
-def get_prompt(question: str):
-    prompt = f"""<s>[INST] {question} [/INST]</s>
-    """
-    # prompt = """<s>[INST] What is AI?  [/INST]</s>
-    # """
+openai.api_key = os.getenv("HF_API_KEY", "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")
+# openai.api_base = "https://limcheekin-mistral-7b-instruct-v0-1-gguf.hf.space/v1"
+openai.api_base = "https://osanseviero-mistral-super-fast.hf.space/v1"
+
+
+def get_prompt(
+        system_prompt: str, 
+        instruction: str):
+    prompt = f"<s>[INST]System: {system_prompt}[/INST]</s> [INST]User: {instruction}[/INST]"
     return prompt
 
-def get_completion(question):    
-    client = InferenceClient(
-        "mistralai/Mistral-7B-Instruct-v0.1"
-    )
-    prompt = get_prompt(question)
+DEFAULT_SYSTEM_PROMPT = "You are a helpful assistant, you will complete the task by follow the instructions given."
 
-    res = client.text_generation(prompt, max_new_tokens=300)
-    #print (res)
-    return res
+def get_completion(
+        prompt, 
+        system_prompt=DEFAULT_SYSTEM_PROMPT,
+        temperature=0.0, 
+        max_tokens=800):
+    messages = [{"role": "user", "content": get_prompt(
+        system_prompt=system_prompt, 
+        instruction=prompt)}]
+
+    response = openai.ChatCompletion.create(
+        model="",        
+        messages=messages,
+        temperature=temperature, 
+        max_tokens=max_tokens    
+    )
+    assistant_content = response['choices'][0]['message']['content']
+    
+    return assistant_content
 
 # Initialize chat history
 if "messages" not in st.session_state:
